@@ -2,17 +2,26 @@ import os
 import argparse
 from PIL import Image
 
-def clean_image_metadata(input_path, output_path):
+def clean_image_metadata(input_path, output_directory):
     """
-    Opens an image, strips all metadata, and saves it.
+    Opens an image, strips all metadata, and saves it into the specified folder.
     """
     try:
         if not os.path.exists(input_path):
             print(f"[ERROR] The file '{input_path}' does not exist.")
             return
 
+        # Create the output directory if it doesn't exist yet
+        if not os.path.exists(output_directory):
+            os.makedirs(output_directory)
+            print(f"[INFO] Created directory: {output_directory}")
+
+        # Construct the final output path
+        file_name = os.path.basename(input_path)
+        output_path = os.path.join(output_directory, f"cleaned_{file_name}")
+
         with Image.open(input_path) as img:
-            # We recreate the image data to ensure no metadata blocks are copied
+            # Recreate the image data to drop all metadata blocks
             data = list(img.getdata())
             clean_img = Image.new(img.mode, img.size)
             clean_img.putdata(data)
@@ -24,19 +33,17 @@ def clean_image_metadata(input_path, output_path):
         print(f"[ERROR] Could not process image: {e}")
 
 def main():
-    # Initialize the argument parser
-    parser = argparse.ArgumentParser(description="A simple CLI tool to strip metadata from images.")
+    parser = argparse.ArgumentParser(description="A CLI tool to strip metadata and save images to a specific folder.")
     
-    # Add arguments: input file (required) and output file (optional)
+    # Argument for the input file
     parser.add_argument("input", help="Path to the original image file")
-    parser.add_argument("-o", "--output", help="Path for the cleaned image (default: 'cleaned_image.jpg')")
+    
+    # Argument for the target folder (default is 'cleaned_photos')
+    parser.add_argument("-d", "--dir", default="cleaned_photos", help="Target directory for cleaned images")
 
     args = parser.parse_args()
 
-    # Set default output name if none is provided
-    output_name = args.output if args.output else "cleaned_" + os.path.basename(args.input)
-
-    clean_image_metadata(args.input, output_name)
+    clean_image_metadata(args.input, args.dir)
 
 if __name__ == "__main__":
     main()
